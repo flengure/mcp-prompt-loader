@@ -12,7 +12,7 @@ A simple, flexible tool for loading any local text file as a system prompt for a
 docker run --rm -v "/path/to/your/prompts:/data:ro" -e PROMPT_FILE=my-prompt.txt mcp-prompt-loader:latest
 ```
 
-### Example MCP Catalog Entry
+### Docker MCP Gateway Catalog Entry
 
 ```yaml
 my-expert:
