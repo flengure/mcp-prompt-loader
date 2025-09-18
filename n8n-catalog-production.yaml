@@ -1,0 +1,290 @@
+name: n8n-resources
+displayName: "n8n Workflow Automation Resources"
+description: "Complete n8n automation toolkit with 535+ nodes, AI integration, and expert workflow guidance"
+version: "1.0.0"
+author: "n8n Community"
+homepage: "https://n8n.io"
+documentation: "https://docs.n8n.io"
+
+registry:
+  n8n-mcp:
+    title: "n8n Workflow Engine"
+    description: "AI assistant access to n8n workflow automation with 535+ nodes for complex automation workflows"
+    type: server
+    image: ghcr.io/czlonkowski/n8n-mcp:latest
+
+    secrets:
+      - name: n8n-mcp.api_url
+        env: N8N_API_URL
+        example: "https://n8n.example.com"
+        description: "Your n8n instance URL"
+        required: true
+        validation:
+          pattern: "^https?://.*"
+          message: "Must be a valid HTTP/HTTPS URL"
+
+      - name: n8n-mcp.api_key
+        env: N8N_API_KEY
+        example: "your-api-key-here"
+        description: "n8n API key for authentication"
+        required: true
+        sensitive: true
+
+    environment:
+      - name: MCP_MODE
+        value: stdio
+        description: "MCP communication mode"
+      - name: LOG_LEVEL
+        value: error
+        description: "Logging verbosity level"
+      - name: DISABLE_CONSOLE_OUTPUT
+        value: "true"
+        description: "Suppress console output for cleaner logs"
+
+    metadata:
+      category: automation
+      subcategory: workflow
+      complexity: intermediate
+      setup_time_minutes: 5
+      tags: ["automation", "workflow", "n8n", "integration"]
+      icon: "⚡"
+
+  gitmcp-n8n-workflows-docs:
+    title: "n8n Workflow Templates"
+    description: "Community-contributed n8n workflow templates and examples"
+    type: server
+    remote:
+      url: "https://gitmcp.io/zie619/n8n-workflows"
+      transport_type: sse
+    metadata:
+      category: documentation
+      tags: ["workflows", "templates", "examples"]
+
+  gitmcp-n8n-mcp-docs:
+    title: "n8n MCP Documentation"
+    description: "Documentation for the n8n MCP integration and API usage"
+    type: server
+    remote:
+      url: "https://gitmcp.io/czlonkowski/n8n-mcp"
+      transport_type: sse
+    metadata:
+      category: documentation
+      tags: ["mcp", "api", "integration"]
+
+  n8n-prompt-tool:
+    title: "n8n AI Workflow Expert"
+    description: "Intelligent n8n expert system for workflow design, node configuration, and automation best practices"
+    type: "server"
+    build:
+      context: /path/to/project
+      dockerfile: Dockerfile
+
+    parameters:
+      promptFile:
+        type: string
+        title: "Workflow Expert Type"
+        description: "Select the specialized n8n expert prompt for your automation needs and experience level"
+        default: "n8n.txt"
+        required: true
+        validation:
+          pattern: "^[a-zA-Z0-9._-]+\\.txt$"
+          message: "Must be a valid .txt filename"
+        options:
+          - value: "n8n.txt"
+            label: "General n8n Expert"
+            description: "Comprehensive n8n guidance for all skill levels"
+            recommended: true
+          - value: "n8n-beginner.txt"
+            label: "Beginner Workflows"
+            description: "Simple automation workflows and basic concepts"
+          - value: "n8n-advanced.txt"
+            label: "Advanced Automation"
+            description: "Complex workflows, custom nodes, and integrations"
+          - value: "n8n-ai-workflows.txt"
+            label: "AI Integration Expert"
+            description: "AI-powered workflows and LLM integrations"
+          - value: "n8n-enterprise.txt"
+            label: "Enterprise Workflows"
+            description: "Scalable, secure workflows for business environments"
+        ui:
+          type: "select"
+          label: "Expert Specialization"
+          help: "Choose the expert type that matches your n8n experience and workflow complexity needs"
+          group: "Expert Configuration"
+
+      workflowComplexity:
+        type: string
+        title: "Target Workflow Complexity"
+        description: "Indicate the complexity level of workflows you're building"
+        default: "intermediate"
+        required: false
+        options:
+          - value: "simple"
+            label: "Simple (1-5 nodes)"
+            description: "Basic automation with minimal logic"
+          - value: "intermediate"
+            label: "Intermediate (5-15 nodes)"
+            description: "Multi-step workflows with conditions"
+          - value: "complex"
+            label: "Complex (15+ nodes)"
+            description: "Advanced workflows with multiple integrations"
+        ui:
+          type: "radio"
+          label: "Workflow Complexity"
+          help: "Helps tailor advice to your workflow complexity needs"
+          group: "Workflow Settings"
+
+      enableDetailedHelp:
+        type: boolean
+        title: "Detailed Explanations"
+        description: "Enable comprehensive explanations and step-by-step guidance"
+        default: true
+        ui:
+          label: "Provide Detailed Help"
+          help: "When enabled, responses include detailed explanations and examples"
+          group: "Expert Configuration"
+
+      baseDir:
+        type: string
+        title: "Prompt Directory"
+        description: "Container directory path where prompt files are mounted"
+        default: "/data"
+        required: true
+        advanced: true
+        validation:
+          pattern: "^/[a-zA-Z0-9/_-]*$"
+          message: "Must be a valid absolute path"
+        ui:
+          label: "Base Directory"
+          help: "Advanced: Container mount point for prompt files"
+          group: "Advanced Settings"
+
+    environment:
+      - name: PROMPT_FILE
+        value: "{{ .promptFile }}"
+        description: "Selected expert prompt file"
+      - name: PROMPT_BASE_DIR
+        value: "{{ .baseDir }}"
+        description: "Base directory for prompt files"
+      - name: WORKFLOW_COMPLEXITY
+        value: "{{ .workflowComplexity }}"
+        description: "Target workflow complexity level"
+      - name: DETAILED_HELP
+        value: "{{ .enableDetailedHelp }}"
+        description: "Enable detailed explanations"
+
+    volumes:
+      - source: "/path/to/prompts"
+        target: "/data"
+        mode: "ro"
+        description: "Read-only mount of prompt files directory"
+
+    healthcheck:
+      test: ["CMD", "test", "-f", "/data/{{ .promptFile }}"]
+      interval: "30s"
+      timeout: "10s"
+      retries: 3
+      start_period: "5s"
+
+    metadata:
+      category: "ai-expert"
+      subcategory: "automation"
+      complexity: "beginner"
+      setup_time_minutes: 2
+      required_knowledge: ["basic-automation"]
+      provides: ["workflow-design", "node-configuration", "automation-patterns"]
+      integrates_with: ["n8n-mcp", "webhook-services", "api-endpoints"]
+      tags:
+        - "n8n"
+        - "workflow"
+        - "automation"
+        - "ai-expert"
+        - "integration"
+        - "no-code"
+      icon: "🔄"
+
+    documentation:
+      overview: |
+        The n8n AI Workflow Expert provides intelligent automation guidance with deep knowledge of:
+
+        • **Workflow Design**: Best practices for efficient and maintainable workflows
+        • **Node Configuration**: Detailed guidance for 535+ available n8n nodes
+        • **Integration Patterns**: Common patterns for API integrations and data transformation
+        • **Error Handling**: Robust error handling and workflow reliability
+        • **Performance Optimization**: Scaling workflows and managing execution efficiency
+
+        Choose from specialized expert prompts tailored to different experience levels and use cases.
+
+      quick_start: |
+        1. **Select Expert**: Choose a specialization matching your workflow needs
+        2. **Set Complexity**: Indicate your target workflow complexity level
+        3. **Deploy**: Start the expert and begin asking workflow questions
+        4. **Build**: Get step-by-step guidance for creating powerful automations
+
+      use_cases:
+        - title: "API Integration Workflows"
+          description: "Connect multiple services and transform data between systems"
+          example: "How do I sync customer data between Salesforce and Slack?"
+
+        - title: "Data Processing Pipelines"
+          description: "Build automated data processing and transformation workflows"
+          example: "Create a workflow to process CSV files and send email reports"
+
+        - title: "AI-Powered Automation"
+          description: "Integrate AI services for intelligent workflow automation"
+          example: "How do I add AI text analysis to my content moderation workflow?"
+
+        - title: "Business Process Automation"
+          description: "Automate complex business processes and approvals"
+          example: "Design an automated invoice approval workflow with multiple stakeholders"
+
+      node_categories:
+        - name: "Triggers"
+          count: 104
+          description: "Webhook, schedule, and event-based workflow triggers"
+        - name: "Actions"
+          count: 431
+          description: "Data manipulation, API calls, and service integrations"
+        - name: "AI Tools"
+          count: 263
+          description: "AI-optimized nodes for intelligent automation"
+
+      best_practices: |
+        **Workflow Design**:
+        • Start with simple workflows and add complexity gradually
+        • Use descriptive node names and add notes for documentation
+        • Implement proper error handling for all external API calls
+
+        **Performance**:
+        • Minimize API calls by batching operations when possible
+        • Use Set node for data transformation instead of multiple nodes
+        • Consider workflow execution limits and timeouts
+
+        **Security**:
+        • Store sensitive data in credentials, never in node parameters
+        • Use environment variables for configuration values
+        • Implement proper authentication for all external connections
+
+      troubleshooting:
+        - issue: "Workflow execution fails"
+          solution: "Check error outputs, verify credentials, and test individual nodes"
+        - issue: "Slow workflow performance"
+          solution: "Review API call patterns, reduce unnecessary operations, check node configuration"
+        - issue: "Data transformation issues"
+          solution: "Use Function nodes for complex transformations, validate data types"
+
+    security:
+      permissions:
+        - "read-only prompt file access"
+        - "no external network connections"
+        - "no credential storage"
+      data_handling:
+        - "No sensitive workflow data processed"
+        - "Prompt files mounted read-only"
+        - "All automation guidance provided through MCP Gateway"
+
+    support:
+      documentation: "https://docs.n8n.io"
+      community: "https://community.n8n.io"
+      discord: "https://discord.gg/n8n"
+      github: "https://github.com/n8n-io/n8n"
