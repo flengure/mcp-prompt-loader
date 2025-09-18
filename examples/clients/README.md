@@ -12,7 +12,7 @@ Choose your client and follow the specific configuration guide:
 | **[Gemini Code Assist](gemini-code-assist.md)** | `.gemini-mcp-config.json` | Google's Gemini integration |
 | **[Zed Editor](zed-editor.md)** | `~/.config/zed/settings.json` | Modern code editor with AI |
 | **[VS Code](vscode.md)** | `.vscode/settings.json` | Visual Studio Code integration |
-| **[Docker MCP Gateway](../docker-mcp-gateway/)** | `catalog.yaml` | Docker's official MCP Gateway |
+| **Docker MCP Gateway** | `catalog.yaml` | Docker's official MCP Gateway |
 
 ## 🔧 **Common Patterns**
 

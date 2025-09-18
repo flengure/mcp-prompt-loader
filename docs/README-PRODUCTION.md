@@ -70,7 +70,10 @@ mcp-prompt-loader/
 ├── 📄 README-PRODUCTION.md          # This file
 ├── 🐳 Dockerfile.production         # Production container
 ├── 🔧 run-production.sh            # Enhanced script with validation
-├── 📋 *-catalog-production.yaml    # Production-ready catalogs
+├── 📂 docs/
+│   ├── 📋 *-catalog-production.yaml    # Production-ready catalogs (now in docs/)
+│   ├── PRODUCTION-OVERVIEW.md
+│   └── MAINTAINERS.md
 ├── 📝 *.txt                        # Expert prompt files
 ├── 🏗️ Dockerfile                   # Original simple container
 ├── ⚙️ run.sh                       # Original simple script

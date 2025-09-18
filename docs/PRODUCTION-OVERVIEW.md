@@ -14,9 +14,9 @@ README-PRODUCTION.md          # Complete production documentation
 
 ### **Production Catalogs**
 ```
-hummingbot-catalog-production.yaml    # Hummingbot expert with UI controls
-n8n-catalog-production.yaml          # n8n expert with complexity options
-personal-catalog-production.yaml     # MCP Gateway & Zed experts
+docs/hummingbot-catalog-production.yaml    # Hummingbot expert with UI controls
+docs/n8n-catalog-production.yaml           # n8n expert with complexity options
+docs/personal-catalog-production.yaml      # MCP Gateway & Zed experts
 ```
 
 ### **Expert Prompt Files**
