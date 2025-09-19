@@ -1,0 +1,68 @@
+name: Build & Release Docker Image
+
+on:
+  push:
+    branches:
+      - main # update :latest on every push to main
+    tags:
+      - "v*.*.*" # e.g. v2.0.1 → push :2.0.1 and :latest
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      IMAGE_NAME: flengure/mcp-prompt-loader
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Detect context (main push vs tag)
+        id: meta
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"       # strip leading v
+            echo "mode=tag" >> "$GITHUB_OUTPUT"
+            echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=main" >> "$GITHUB_OUTPUT"
+          fi
+
+      # --- Push :latest on any push to main ---
+      - name: Build & push :latest (push to main)
+        if: steps.meta.outputs.mode == 'main'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:latest
+
+      # --- Push :<version> on tag (and also :latest) ---
+      - name: Build & push :<version> (tag)
+        if: steps.meta.outputs.mode == 'tag'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
+            ${{ env.IMAGE_NAME }}:latest
