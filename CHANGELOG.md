@@ -1,33 +1,21 @@
 # Changelog
 
-## [2.1.0] – Upcoming
-### 🚀 Planned Features
-- **Metadata index**: optional `index.json` in prompt folder to provide `title`, `description`, `category` per prompt.
-- **Search tool**: new `search_prompts(query)` for fuzzy matching across names & metadata.
-- **Markdown support**: allow `.md` prompts alongside `.txt`.
-- **Config knobs**:
-  - `PROMPT_GLOB` (default `*.txt,*.md`)
-  - `LOG_LEVEL` (`info`, `debug`)
-  - `ALLOW_WRITE` (default `false`)
-- **Active prompt tracking**: optional `set_active_prompt` / `get_active_prompt`.
+## v2.0.0
+**Folder-mode release.**
+
+- Added support for mounting an entire folder of `.txt` prompts instead of single file.
+- Introduced two MCP tools:
+  - **`prompts/list`** — returns the available prompt names (based on `.txt` files).
+  - **`prompts/get`** — returns the contents of a prompt by name.
+- Prompts are re-read from disk on each call, so no container restart is required when files change.
+- Multi-arch Docker builds (`linux/amd64` + `linux/arm64`).
+- Auto-publish workflow to Docker Hub (`:latest` on main, `:X.Y.Z` on tags).
 
 ---
 
-## [2.0.0] – 2025-09-19
-### ✨ Added
-- **Prompt folder mode**:
-  - `list_prompts`: enumerate available prompt files.
-  - `get_prompt_by_name`: return full text of prompt (dynamic re-read).
-  - Auto-detects new prompt files without restart (hot reload).
-- **Docker CI/CD**:
-  - GitHub Actions workflow for auto-build + publish.
-  - Multi-arch builds (`linux/amd64`, `linux/arm64`) via `buildx`.
-  - Tags both `:latest` and versioned releases (e.g. `:2.0.0`).
-  - Verified digest parity between tags.
+## v1.0.0
+**Initial release.**
 
----
-
-## [1.0.0] – 2025-09-19
-### 🎉 Initial Release
-- Single-file mode (`PROMPT_FILE`).
-- Basic prompt serving over MCP.
+- Single-file prompt loader (`PROMPT_FILE` env or mounted `/prompt.txt`).
+- Worked with Claude Desktop, Zed, Gemini CLI, Cursor, Windsurf.
+- Docker Hub image `flengure/mcp-prompt-loader:1.0.0`.
