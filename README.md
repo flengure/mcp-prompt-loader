@@ -1,83 +1,65 @@
 # MCP Prompt Loader
 
-[![CI](https://github.com/flengure/mcp-prompt-loader/actions/workflows/release-docker.yml/badge.svg)](https://github.com/flengure/mcp-prompt-loader/actions/workflows/release-docker.yml)
-[![Version](https://img.shields.io/github/v/tag/flengure/mcp-prompt-loader?label=release)](https://github.com/flengure/mcp-prompt-loader/releases)
-[![Docker Pulls](https://img.shields.io/docker/pulls/flengure/mcp-prompt-loader.svg)](https://hub.docker.com/r/flengure/mcp-prompt-loader)
-[![Image Size](https://img.shields.io/docker/image-size/flengure/mcp-prompt-loader/latest)](https://hub.docker.com/r/flengure/mcp-prompt-loader)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Stars](https://img.shields.io/github/stars/flengure/mcp-prompt-loader?style=social)](https://github.com/flengure/mcp-prompt-loader/stargazers)
+A lightweight Model Context Protocol (MCP) server that loads system prompts from plain text files.  
+Works with Claude Desktop, Zed, Gemini CLI, Cursor, Windsurf, and via docker-mcp-gateway.
 
-A lightweight Model Context Protocol (MCP) server that loads prompts from `.txt` files and serves them to any MCP-compatible client (Claude Desktop, Zed, Gemini CLI, Cursor, Windsurf, etc.).
+---
 
 ## Features
-- 🔹 **Folder Mode**: mount a folder with multiple `.txt` files and they are all available instantly
-- 🔹 **Tooling**: list prompts and fetch content via JSON-RPC
-- 🔹 **Clients Supported**: Claude Desktop, Zed, Gemini CLI, Cursor, Windsurf
-- 🔹 **No Restarts**: drop in new files and they show up automatically on `list_prompts`
+
+- **Folder mode** — mount a directory of `.txt` files, instantly exposed as prompts.
+- **No rebuilds** — add or edit `.txt` files and they show up immediately.
+- **Cross-client** — tested with Claude Desktop, Zed, Gemini CLI, Cursor, Windsurf.
+- **Dockerized** — runs as a simple container, no Node/npm setup needed.
+- **Multi-arch** — published for both `amd64` and `arm64`.
 
 ---
 
-## Installation / Usage
+## Usage
 
-Mount a folder containing your `.txt` prompt files:
+### 1. Prepare a prompts folder
 
 ```bash
-docker run --rm -i \
-  -v ~/Documents/prompts:/prompts:ro \
-  flengure/mcp-prompt-loader:latest
+mkdir ~/Documents/prompts
+echo "You are a helpful writing assistant." > ~/Documents/prompts/writer.txt
+echo "You are a research copilot." > ~/Documents/prompts/researcher.txt
 ```
 
-Your client config (Claude Desktop, Zed, etc.) will call this container and use prompts by name.
-
----
-
-## Docker Tags
-
-This project publishes Docker images to https://hub.docker.com/r/flengure/mcp-prompt-loader
-
-- **latest**  
-  Always points to the newest stable release (currently `v2.0.0`).  
-  Recommended if you just want the most up-to-date features.
-
-- **Versioned tags (e.g. 2.0.0)**  
-  Point to a specific release.  
-  Recommended if you need reproducible builds and don’t want unexpected updates.
-
-Example usage:
+### 2. Run with Docker
 
 ```bash
-# Always up to date
-docker run --rm -i -v ~/Documents/prompts:/prompts:ro flengure/mcp-prompt-loader:latest
-
-# Reproducible build
-docker run --rm -i -v ~/Documents/prompts:/prompts:ro flengure/mcp-prompt-loader:2.0.0
+docker run --rm -i   -v ~/Documents/prompts:/prompts:ro   flengure/mcp-prompt-loader:latest
 ```
 
 ---
 
 ## Tools
 
-### list_prompts
-Lists all `.txt` files in `/prompts` and exposes them by name.
+### `prompts/list`
+Lists all `.txt` files in `/prompts` and exposes them by name (filename without `.txt`).
 
-### get_prompt
-Fetches the contents of a specific prompt by name (without `.txt` extension).
+Example result:
+- writer
+- researcher
+- teacher
+
+### `prompts/get`
+Returns the full text of a specific prompt by name (without `.txt`).
+
+Input:
+- `name` (string) — e.g. `writer`, not `writer.txt`
+
+Behavior:
+- Reads the file fresh on every call (no restart needed).
 
 ---
 
-## Example Prompts
-
-Put files like these into `~/Documents/prompts`:
-
-- `writer.txt`
-- `researcher.txt`
-- `teacher.txt`
-
-They will be accessible immediately without restarting.
+> 💡 **Tip:** First run `prompts/list` in your MCP client to see what’s available.  
+> Then call `prompts/get` with the name (without `.txt`) to load it.
 
 ---
 
-## Client Configs
+## Example MCP Configurations
 
 <details>
 <summary>Claude Desktop</summary>
@@ -148,14 +130,31 @@ They will be accessible immediately without restarting.
 ```
 </details>
 
-<details>
-<summary>Cursor & Windsurf</summary>
+---
 
-Same as above — use "mcpServers" with the same docker run arguments.
-</details>
+## Troubleshooting
+
+- **I don’t see my new prompt file.**  
+  `prompts/list` rescans the folder each time, and `prompts/get` re-reads on demand.  
+  Make sure the file ends in `.txt` and is inside the mounted folder (default `/prompts`).
+
+- **Permission denied or file not found.**  
+  Check your `-v` mount path is correct and readable. Example:  
+  `-v /Users/you/Documents/prompts:/prompts:ro`
+
+- **Windows path mapping (Docker Desktop).**  
+  Use a path like: `-v //c/Users/you/Documents/prompts:/prompts:ro`  
+  Ensure Docker Desktop has access to that drive.
+
+- **Client shows multiple tools but I can’t select a prompt.**  
+  Most clients list tools like commands. Run `prompts/list`, then choose a name and call `prompts/get`.
+
+- **Container exits immediately.**  
+  Your MCP client controls the process lifecycle. It may spawn the container only while connected.  
+  That’s normal—no need to keep it running manually.
 
 ---
 
 ## License
 
-This project is licensed under the MIT License: see LICENSE.
+MIT © flengure
