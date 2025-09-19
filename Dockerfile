@@ -1,14 +1,11 @@
-# syntax=docker/dockerfile:1
 FROM node:20-alpine
 
-# Set working directory
+LABEL maintainer="flengure"
+LABEL version="2.0.0-dev"
+LABEL description="MCP Prompt Loader - folder-based prompt server"
+
 WORKDIR /app
+COPY prompt-server.mjs /app/
 
-# Copy only the server file
-COPY prompt-server.mjs .
-
-# Run as non-root user (provided by node:20-alpine)
 USER node
-
-# Command: start the MCP server
 CMD ["node", "prompt-server.mjs"]
