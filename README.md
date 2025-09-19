@@ -1,37 +1,57 @@
-# MCP Prompt Loader (Folder Mode)
+# MCP Prompt Loader
 
-A minimal Model Context Protocol (MCP) server that serves **multiple prompt files** from a **mounted folder**.
-Version **2.0.0-dev**: folder-based only, single container, multiple prompts.
+A lightweight [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that loads system prompts from text files and exposes them to LLM clients like Claude Desktop, Zed, Gemini CLI, Cursor, and Windsurf.
+
+Supports two modes:
+
+- **v1.0.0 (single file mode)**: mount a single `.txt` file as `/prompt.txt`
+- **v2.0.0 (folder mode)**: mount a whole folder of `.txt` files as `/prompts`, and list/get them dynamically
 
 ---
 
-## Quick Start
+## 🚀 Quick Start (Folder Mode)
 
-1) Put your prompts in a folder (each prompt is a `.txt` file):
+Mount a folder of prompts:
+
+```bash
+docker run --rm -i \
+  -v ~/Documents/prompts:/prompts:ro \
+  flengure/mcp-prompt-loader:2.0.0
+```
+
+Example folder layout:
 
 ```
 ~/Documents/prompts/
-├── writer.txt
-├── researcher.txt
-└── hummingbot-expert.txt
+  ├── writer.txt
+  ├── researcher.txt
+  └── teacher.txt
 ```
-
-2) Run the server with Docker (no env var needed — path is hard-coded to `/prompts` inside the container):
-
-```bash
-docker build -t flengure/mcp-prompt-loader:2.0.0-dev .
-docker run --rm -i \
-  -v ~/Documents/prompts:/prompts:ro \
-  flengure/mcp-prompt-loader:2.0.0-dev
-```
-
-> The client can now **list** and **load** prompts dynamically.
 
 ---
 
-## MCP Clients (ready-to-paste)
+## 🔄 Dynamic folder mode
 
-### Claude Desktop — `claude_desktop_config.json`
+Drop new `.txt` files into your mounted `~/Documents/prompts` folder **while the container is running**:
+
+```bash
+echo "You are a math tutor." > ~/Documents/prompts/tutor.txt
+```
+
+Then, from your MCP client:
+
+- Run **list_prompts** → `tutor` appears immediately
+- Run **get_prompt_by_name** with `{ "name": "tutor" }` → you get the text inside `tutor.txt`
+
+No restart, no reload, no SIGHUP required.
+
+---
+
+## 🖥️ Example Client Configs
+
+<details>
+<summary>Claude Desktop</summary>
+
 ```json
 {
   "mcpServers": {
@@ -41,14 +61,17 @@ docker run --rm -i \
       "args": [
         "run","--rm","-i",
         "-v","/Users/tg/Documents/prompts:/prompts:ro",
-        "flengure/mcp-prompt-loader:2.0.0-dev"
+        "flengure/mcp-prompt-loader:2.0.0"
       ]
     }
   }
 }
 ```
+</details>
 
-### Zed — `settings.json`
+<details>
+<summary>Zed Editor</summary>
+
 ```json
 {
   "context_servers": {
@@ -58,14 +81,17 @@ docker run --rm -i \
       "args": [
         "run","--rm","-i",
         "-v","/Users/tg/Documents/prompts:/prompts:ro",
-        "flengure/mcp-prompt-loader:2.0.0-dev"
+        "flengure/mcp-prompt-loader:2.0.0"
       ]
     }
   }
 }
 ```
+</details>
 
-### Gemini CLI / Cursor / Windsurf — same structure
+<details>
+<summary>Gemini CLI</summary>
+
 ```json
 {
   "mcpServers": {
@@ -75,79 +101,68 @@ docker run --rm -i \
       "args": [
         "run","--rm","-i",
         "-v","/Users/tg/Documents/prompts:/prompts:ro",
-        "flengure/mcp-prompt-loader:2.0.0-dev"
+        "flengure/mcp-prompt-loader:2.0.0"
       ]
     }
   }
 }
 ```
+</details>
 
-> The object key (`"prompts: Folder"`) is just a **label**. Name it however you like (e.g., `"Experts: Writing"`).
+<details>
+<summary>Cursor / Windsurf</summary>
 
----
-
-## What the client can call
-
-### Native MCP methods
-- `prompts/list` → returns all prompt names (without `.txt`)
-- `prompts/get` with `{ "name": "<promptName>" }` → returns a system message containing the file
-
-### Tool interface (for UIs that prefer tools)
-- `tools/list` → exposes two tools:
-  - `list_prompts`
-  - `get_prompt_by_name`
-- `tools/call`:
-  - `list_prompts` → returns JSON array of names
-  - `get_prompt_by_name` with `{ "name": "<promptName>" }` → returns raw text
-
----
-
-## Sample Exchange
-
-List:
-```json
-{ "jsonrpc": "2.0", "id": 1, "method": "prompts/list" }
-```
-
-Response:
 ```json
 {
-  "jsonrpc": "2.0",
-  "id": 1,
-  "result": {
-    "prompts": [
-      { "name": "hummingbot-expert", "description": "Loaded from /prompts/hummingbot-expert.txt", "arguments": [] },
-      { "name": "researcher", "description": "Loaded from /prompts/researcher.txt", "arguments": [] },
-      { "name": "writer", "description": "Loaded from /prompts/writer.txt", "arguments": [] }
-    ]
+  "mcpServers": {
+    "prompts: Folder": {
+      "type": "stdio",
+      "command": "docker",
+      "args": [
+        "run","--rm","-i",
+        "-v","/Users/tg/Documents/prompts:/prompts:ro",
+        "flengure/mcp-prompt-loader:2.0.0"
+      ]
+    }
   }
 }
 ```
-
-Get:
-```json
-{ "jsonrpc": "2.0", "id": 2, "method": "prompts/get", "params": { "name": "writer" } }
-```
+</details>
 
 ---
 
-## Development
+## 📦 Run from Docker Hub
 
-Build and run locally:
+Use the published image:
+
 ```bash
-docker build -t mcp-prompt-loader:dev .
 docker run --rm -i \
-  -v $(pwd)/prompts:/prompts:ro \
-  mcp-prompt-loader:dev
+  -v ~/Documents/prompts:/prompts:ro \
+  flengure/mcp-prompt-loader:latest
 ```
 
-Notes:
-- Mount path inside container is **always** `/prompts` (hard-coded for safety).
-- Filenames must match `[a-zA-Z0-9._-]+` and end with `.txt`.
-- Max file size: **512 KB** (adjust in code if needed).
-- SIGHUP is accepted (no-op; folder mode reads on demand).
+Or pin a specific version:
+
+```bash
+docker run --rm -i \
+  -v ~/Documents/prompts:/prompts:ro \
+  flengure/mcp-prompt-loader:2.0.0
+```
 
 ---
 
-## Changelog
-- **2.0.0-dev** — Folder-mode only; adds `list_prompts` tool; no `PROMPT_DIR` env; safer filenames; unified workflows.
+## 🛠️ Development (local build)
+
+```bash
+git clone https://github.com/flengure/mcp-prompt-loader.git
+cd mcp-prompt-loader
+docker build -t mcp-prompt-loader:local .
+```
+
+Then run:
+
+```bash
+docker run --rm -i \
+  -v ~/Documents/prompts:/prompts:ro \
+  mcp-prompt-loader:local
+```
