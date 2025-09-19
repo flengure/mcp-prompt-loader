@@ -4,56 +4,58 @@ import path from "path";
 import process from "process";
 
 /**
- * MCP Prompt Loader — Folder Mode (v2.0.0-dev)
- * - Hard-coded mount point: /prompts (no env var to drift)
- * - Supports MCP native prompts methods and tool calls:
- *     - prompts/list
- *     - prompts/get   (params: { name })
- *     - tools/list    -> list_prompts, get_prompt_by_name
- *     - tools/call    (list_prompts | get_prompt_by_name)
+ * MCP Prompt Loader — Folder Mode (v2.0.0-dev, dynamic)
+ * - Hard-coded mount: /prompts
+ * - Dynamic listing: re-scan folder on every list (prompts/list + list_prompts)
+ * - Dynamic content: re-read file on every get (prompts/get + get_prompt_by_name)
  */
 
 const PROMPT_DIR = "/prompts";
-const MAX_BYTES = 512 * 1024; // 512 KB/file cap
-const NAME_RE = /^[a-zA-Z0-9._-]+$/; // safe names only
+const MAX_BYTES = 512 * 1024;
+const NAME_RE = /^[a-zA-Z0-9._-]+$/;
 
 const log = (lvl, msg) => console.error(`[${lvl}] ${msg}`);
 const send = (obj) => process.stdout.write(JSON.stringify(obj) + "\n");
 
-// Ensure mount exists
-if (!fs.existsSync(PROMPT_DIR)) {
-  log(
-    "ERROR",
-    `Missing prompt folder: ${PROMPT_DIR}. Did you mount -v /host/path:${PROMPT_DIR}:ro ?`,
-  );
-  process.exit(1);
-}
-
-function listPromptNames() {
+function safeListNames() {
   try {
+    // dynamic: read directory every call
     return fs
       .readdirSync(PROMPT_DIR, { withFileTypes: true })
-      .filter((e) => e.isFile() && e.name.endsWith(".txt"))
+      .filter((e) => e.isFile() && e.name.toLowerCase().endsWith(".txt"))
       .map((e) => e.name.replace(/\.txt$/i, "")) // expose names WITHOUT .txt
       .filter((n) => NAME_RE.test(n))
       .sort((a, b) => a.localeCompare(b));
-  } catch {
+  } catch (e) {
+    log("WARN", `list failed: ${e.message}`);
     return [];
   }
 }
 
-function readPrompt(name) {
+function safeRead(name) {
   if (!NAME_RE.test(name)) throw new Error("invalid name");
   const fp = path.join(PROMPT_DIR, `${name}.txt`);
-  const st = fs.statSync(fp);
+  const st = fs.statSync(fp); // throws if missing
   if (!st.isFile()) throw new Error("not a file");
   if (st.size > MAX_BYTES) throw new Error(`file too large (${st.size} bytes)`);
+  // dynamic: read file every call
   let txt = fs.readFileSync(fp, "utf8");
   if (txt.charCodeAt(0) === 0xfeff) txt = txt.slice(1); // strip BOM
   return txt.replace(/\r\n/g, "\n");
 }
 
-// ---------------- MCP loop ----------------
+// ensure mount exists (at startup)
+try {
+  const s = fs.statSync(PROMPT_DIR);
+  if (!s.isDirectory()) throw new Error("not a directory");
+} catch (e) {
+  log(
+    "ERROR",
+    `Missing prompt folder: ${PROMPT_DIR}. Mount with: -v /host/path:${PROMPT_DIR}:ro`,
+  );
+  process.exit(1);
+}
+
 process.stdin.setEncoding("utf8");
 let buf = "";
 
@@ -76,7 +78,6 @@ process.stdin.on("data", (chunk) => {
 
     const { id, method, params } = msg;
 
-    // initialize
     if (method === "initialize") {
       const clientProto = params?.protocolVersion || "2024-11-05";
       send({
@@ -85,7 +86,6 @@ process.stdin.on("data", (chunk) => {
         result: {
           protocolVersion: clientProto,
           serverInfo: { name: "mcp-prompt-loader", version: "2.0.0-dev" },
-          // capabilities are optional; tools are discovered via tools/list
           capabilities: {
             prompts: { listChanged: false },
             tools: { listChanged: false },
@@ -95,9 +95,9 @@ process.stdin.on("data", (chunk) => {
       continue;
     }
 
-    // ----- native prompts API (for clients that use it) -----
+    // native prompts APIs
     if (method === "prompts/list") {
-      const names = listPromptNames();
+      const names = safeListNames(); // dynamic
       send({
         jsonrpc: "2.0",
         id,
@@ -116,7 +116,7 @@ process.stdin.on("data", (chunk) => {
       try {
         const name = params?.name;
         if (!name) throw new Error("missing name");
-        const text = readPrompt(name);
+        const text = safeRead(name); // dynamic
         send({
           jsonrpc: "2.0",
           id,
@@ -135,7 +135,7 @@ process.stdin.on("data", (chunk) => {
       continue;
     }
 
-    // ----- tools -----
+    // tools
     if (method === "tools/list") {
       send({
         jsonrpc: "2.0",
@@ -144,7 +144,7 @@ process.stdin.on("data", (chunk) => {
           tools: [
             {
               name: "list_prompts",
-              description: "Return available prompt names (folder mode)",
+              description: "Return available prompt names (dynamic re-scan)",
               inputSchema: {
                 type: "object",
                 properties: {},
@@ -153,7 +153,7 @@ process.stdin.on("data", (chunk) => {
             },
             {
               name: "get_prompt_by_name",
-              description: "Return prompt text by name (argument: { name })",
+              description: "Return prompt text by name (dynamic re-read)",
               inputSchema: {
                 type: "object",
                 properties: { name: { type: "string" } },
@@ -171,7 +171,7 @@ process.stdin.on("data", (chunk) => {
       const tool = params?.name;
 
       if (tool === "list_prompts") {
-        const names = listPromptNames();
+        const names = safeListNames(); // dynamic
         send({
           jsonrpc: "2.0",
           id,
@@ -183,7 +183,7 @@ process.stdin.on("data", (chunk) => {
       if (tool === "get_prompt_by_name") {
         try {
           const name = params?.arguments?.name;
-          const text = readPrompt(name);
+          const text = safeRead(name); // dynamic
           send({
             jsonrpc: "2.0",
             id,
@@ -212,8 +212,8 @@ process.stdin.on("data", (chunk) => {
 });
 
 process.on("SIGHUP", () => {
-  // folder mode reads on demand; nothing to refresh
-  log("INFO", "SIGHUP received.");
+  // dynamic mode: nothing to reload; reads are always fresh
+  log("INFO", "SIGHUP received (no-op; dynamic listing/reads).");
 });
 
-log("INFO", `Folder mode active. Serving from: ${PROMPT_DIR}`);
+log("INFO", `Folder mode active (dynamic). Serving from: ${PROMPT_DIR}`);
