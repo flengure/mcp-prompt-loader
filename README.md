@@ -1,4 +1,5 @@
 # MCP Prompt Loader
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A lightweight Model Context Protocol (MCP) server that loads prompts from `.txt` files and serves them to any MCP-compatible client (Claude Desktop, Zed, Gemini CLI, Cursor, Windsurf, etc.).
 
