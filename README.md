@@ -1,74 +1,37 @@
 # MCP Prompt Loader
 
-A lightweight [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that loads a single prompt file and exposes it over stdio to clients like Claude Desktop, Zed, Gemini CLI, Cursor, Windsurf, or via `docker-mcp-gateway`.
-
----
-
-## Features
-
-- Minimal design: two files (`prompt-server.mjs` + `Dockerfile`)
-- Mount any `.txt` prompt file and serve it to an MCP client
-- Works with Claude Desktop, Zed, Gemini CLI, Cursor, Windsurf
-- Runs in Docker for portability
-- Optional version pinning with Docker Hub (`:1.0.0`, `:latest`)
+A simple Model Context Protocol (MCP) server that serves prompt files from a mounted folder.
+Version 2.0.0-dev introduces folder-based loading only.
 
 ---
 
 ## Quick Start
 
-You can run `mcp-prompt-loader` in two ways:
+1. Put your prompt files (.txt) in a folder, e.g.:
 
-<details>
-<summary><b>Option 1 — Run directly from Docker Hub (no build needed)</b></summary>
+~/Documents/prompts/
+├── hummingbot-expert.txt
+├── binance-expert.txt
+└── dydx-expert.txt
 
-```bash
+2. Run the server with Docker:
+
 docker run --rm -i \
-  -v /absolute/path/to/my-prompt.txt:/prompt.txt:ro \
-  flengure/mcp-prompt-loader:latest
-```
+  -v ~/Documents/prompts:/prompts:ro \
+  -e PROMPT_DIR=/prompts \
+  flengure/mcp-prompt-loader:2.0.0-dev
 
-Prefer a fixed version:
-
-```bash
-docker run --rm -i \
-  -v /absolute/path/to/my-prompt.txt:/prompt.txt:ro \
-  flengure/mcp-prompt-loader:1.0.0
-```
-
-</details>
-
-<details>
-<summary><b>Option 2 — Build and run locally</b></summary>
-
-```bash
-# Clone the repo
-git clone https://github.com/flengure/mcp-prompt-loader.git
-cd mcp-prompt-loader
-
-# Build the image
-docker build -t mcp-prompt-loader:local .
-
-# Run with your prompt
-docker run --rm -i \
-  -v /absolute/path/to/my-prompt.txt:/prompt.txt:ro \
-  mcp-prompt-loader:local
-```
-
-</details>
-
-> The container always expects the prompt mounted as `/prompt.txt`.
+The server exposes MCP stdio. Clients can call `prompts/list` then `prompts/get` (or `tools/call` with `get_prompt_by_name`).
 
 ---
 
-## Example Client Configurations
+## Example Client Configs
 
-<details>
-<summary><b>Claude Desktop (`claude_desktop_config.json`)</b></summary>
+### Claude Desktop (claude_desktop_config.json)
 
-```json
 {
   "mcpServers": {
-    "hummingbot: Expert": {
+    "prompts: Folder": {
       "type": "stdio",
       "command": "docker",
       "args": [
@@ -76,23 +39,20 @@ docker run --rm -i \
         "--rm",
         "-i",
         "-v",
-        "/Users/tg/Documents/prompts/hummingbot-expert.txt:/prompt.txt:ro",
-        "flengure/mcp-prompt-loader:latest"
+        "/Users/tg/Documents/prompts:/prompts:ro",
+        "-e",
+        "PROMPT_DIR=/prompts",
+        "flengure/mcp-prompt-loader:2.0.0-dev"
       ]
     }
   }
 }
-```
 
-</details>
+### Zed (settings.json)
 
-<details>
-<summary><b>Zed (`settings.json`)</b></summary>
-
-```json
 {
   "context_servers": {
-    "hummingbot: Expert": {
+    "prompts: Folder": {
       "source": "custom",
       "command": "docker",
       "args": [
@@ -100,90 +60,30 @@ docker run --rm -i \
         "--rm",
         "-i",
         "-v",
-        "/Users/tg/Documents/prompts/hummingbot-expert.txt:/prompt.txt:ro",
-        "flengure/mcp-prompt-loader:latest"
+        "/Users/tg/Documents/prompts:/prompts:ro",
+        "-e",
+        "PROMPT_DIR=/prompts",
+        "flengure/mcp-prompt-loader:2.0.0-dev"
       ]
     }
   }
 }
-```
-
-</details>
-
-<details>
-<summary><b>Gemini CLI (`config.json`)</b></summary>
-
-```json
-{
-  "mcpServers": {
-    "hummingbot: Expert": {
-      "type": "stdio",
-      "command": "docker",
-      "args": [
-        "run",
-        "--rm",
-        "-i",
-        "-v",
-        "/Users/tg/Documents/prompts/hummingbot-expert.txt:/prompt.txt:ro",
-        "flengure/mcp-prompt-loader:latest"
-      ]
-    }
-  }
-}
-```
-
-</details>
-
-<details>
-<summary><b>Cursor (`settings.json`)</b></summary>
-
-```json
-{
-  "mcpServers": {
-    "hummingbot: Expert": {
-      "type": "stdio",
-      "command": "docker",
-      "args": [
-        "run",
-        "--rm",
-        "-i",
-        "-v",
-        "/Users/tg/Documents/prompts/hummingbot-expert.txt:/prompt.txt:ro",
-        "flengure/mcp-prompt-loader:latest"
-      ]
-    }
-  }
-}
-```
-
-</details>
-
-<details>
-<summary><b>Windsurf (`settings.json`)</b></summary>
-
-```json
-{
-  "mcpServers": {
-    "hummingbot: Expert": {
-      "type": "stdio",
-      "command": "docker",
-      "args": [
-        "run",
-        "--rm",
-        "-i",
-        "-v",
-        "/Users/tg/Documents/prompts/hummingbot-expert.txt:/prompt.txt:ro",
-        "flengure/mcp-prompt-loader:latest"
-      ]
-    }
-  }
-}
-```
-
-</details>
 
 ---
 
-## License
+## Supported Methods
 
-Apache License 2.0
+- initialize → MCP handshake
+- prompts/list → returns names of .txt in PROMPT_DIR
+- prompts/get → returns a system message block with the selected file
+- tools/list / tools/call(get_prompt_by_name) → optional text fetch path
+
+---
+
+## Dev / Test
+
+docker build -t mcp-prompt-loader:dev .
+docker run --rm -i \
+  -v $(pwd)/prompts:/prompts:ro \
+  -e PROMPT_DIR=/prompts \
+  mcp-prompt-loader:dev
