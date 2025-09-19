@@ -1,53 +1,76 @@
 # MCP Prompt Loader
 
-A lightweight [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that loads system prompts from text files and exposes them to LLM clients like Claude Desktop, Zed, Gemini CLI, Cursor, and Windsurf.
+A lightweight Model Context Protocol (MCP) server that loads prompts from `.txt` files and serves them to any MCP-compatible client (Claude Desktop, Zed, Gemini CLI, Cursor, Windsurf, etc.).
 
-Supports two modes:
-
-- **v1.0.0 (single file mode)**: mount a single `.txt` file as `/prompt.txt`
-- **v2.0.0 (folder mode)**: mount a whole folder of `.txt` files as `/prompts`, and list/get them dynamically
+## Features
+- 🔹 **Folder Mode**: mount a folder with multiple `.txt` files and they are all available instantly
+- 🔹 **Tooling**: list prompts and fetch content via JSON-RPC
+- 🔹 **Clients Supported**: Claude Desktop, Zed, Gemini CLI, Cursor, Windsurf
+- 🔹 **No Restarts**: drop in new files and they show up automatically on `list_prompts`
 
 ---
 
-## 🚀 Quick Start (Folder Mode)
+## Installation / Usage
 
-Mount a folder of prompts:
+Mount a folder containing your `.txt` prompt files:
 
 ```bash
 docker run --rm -i \
   -v ~/Documents/prompts:/prompts:ro \
-  flengure/mcp-prompt-loader:2.0.0
+  flengure/mcp-prompt-loader:latest
 ```
 
-Example folder layout:
-
-```
-~/Documents/prompts/
-  ├── writer.txt
-  ├── researcher.txt
-  └── teacher.txt
-```
+Your client config (Claude Desktop, Zed, etc.) will call this container and use prompts by name.
 
 ---
 
-## 🔄 Dynamic folder mode
+## Docker Tags
 
-Drop new `.txt` files into your mounted `~/Documents/prompts` folder **while the container is running**:
+This project publishes Docker images to [Docker Hub](https://hub.docker.com/r/flengure/mcp-prompt-loader).
+
+- **`latest`**
+  Always points to the newest stable release (currently `v2.0.0`).
+  Recommended if you just want the most up-to-date features.
+
+- **Versioned tags (e.g. `2.0.0`)**
+  Point to a specific release.
+  Recommended if you need reproducible builds and don’t want unexpected updates.
+
+Example usage:
 
 ```bash
-echo "You are a math tutor." > ~/Documents/prompts/tutor.txt
+# Always up to date
+docker run --rm -i -v ~/Documents/prompts:/prompts:ro flengure/mcp-prompt-loader:latest
+
+# Reproducible build
+docker run --rm -i -v ~/Documents/prompts:/prompts:ro flengure/mcp-prompt-loader:2.0.0
 ```
-
-Then, from your MCP client:
-
-- Run **list_prompts** → `tutor` appears immediately
-- Run **get_prompt_by_name** with `{ "name": "tutor" }` → you get the text inside `tutor.txt`
-
-No restart, no reload, no SIGHUP required.
 
 ---
 
-## 🖥️ Example Client Configs
+## Tools
+
+### `list_prompts`
+Lists all `.txt` files in `/prompts` and exposes them by name.
+
+### `get_prompt`
+Fetches the contents of a specific prompt by name (without `.txt` extension).
+
+---
+
+## Example Prompts
+
+Put files like these into `~/Documents/prompts`:
+
+- `writer.txt`
+- `researcher.txt`
+- `teacher.txt`
+
+They will be accessible immediately without restarting.
+
+---
+
+## Client Configs
 
 <details>
 <summary>Claude Desktop</summary>
@@ -59,9 +82,12 @@ No restart, no reload, no SIGHUP required.
       "type": "stdio",
       "command": "docker",
       "args": [
-        "run","--rm","-i",
-        "-v","/Users/tg/Documents/prompts:/prompts:ro",
-        "flengure/mcp-prompt-loader:2.0.0"
+        "run",
+        "--rm",
+        "-i",
+        "-v",
+        "/Users/you/Documents/prompts:/prompts:ro",
+        "flengure/mcp-prompt-loader:latest"
       ]
     }
   }
@@ -79,9 +105,12 @@ No restart, no reload, no SIGHUP required.
       "source": "custom",
       "command": "docker",
       "args": [
-        "run","--rm","-i",
-        "-v","/Users/tg/Documents/prompts:/prompts:ro",
-        "flengure/mcp-prompt-loader:2.0.0"
+        "run",
+        "--rm",
+        "-i",
+        "-v",
+        "/Users/you/Documents/prompts:/prompts:ro",
+        "flengure/mcp-prompt-loader:latest"
       ]
     }
   }
@@ -99,9 +128,12 @@ No restart, no reload, no SIGHUP required.
       "type": "stdio",
       "command": "docker",
       "args": [
-        "run","--rm","-i",
-        "-v","/Users/tg/Documents/prompts:/prompts:ro",
-        "flengure/mcp-prompt-loader:2.0.0"
+        "run",
+        "--rm",
+        "-i",
+        "-v",
+        "/Users/you/Documents/prompts:/prompts:ro",
+        "flengure/mcp-prompt-loader:latest"
       ]
     }
   }
@@ -110,59 +142,13 @@ No restart, no reload, no SIGHUP required.
 </details>
 
 <details>
-<summary>Cursor / Windsurf</summary>
+<summary>Cursor & Windsurf</summary>
 
-```json
-{
-  "mcpServers": {
-    "prompts: Folder": {
-      "type": "stdio",
-      "command": "docker",
-      "args": [
-        "run","--rm","-i",
-        "-v","/Users/tg/Documents/prompts:/prompts:ro",
-        "flengure/mcp-prompt-loader:2.0.0"
-      ]
-    }
-  }
-}
-```
+Same as above — use `"mcpServers"` with the same docker run arguments.
 </details>
 
 ---
 
-## 📦 Run from Docker Hub
+## License
 
-Use the published image:
-
-```bash
-docker run --rm -i \
-  -v ~/Documents/prompts:/prompts:ro \
-  flengure/mcp-prompt-loader:latest
-```
-
-Or pin a specific version:
-
-```bash
-docker run --rm -i \
-  -v ~/Documents/prompts:/prompts:ro \
-  flengure/mcp-prompt-loader:2.0.0
-```
-
----
-
-## 🛠️ Development (local build)
-
-```bash
-git clone https://github.com/flengure/mcp-prompt-loader.git
-cd mcp-prompt-loader
-docker build -t mcp-prompt-loader:local .
-```
-
-Then run:
-
-```bash
-docker run --rm -i \
-  -v ~/Documents/prompts:/prompts:ro \
-  mcp-prompt-loader:local
-```
+MIT
