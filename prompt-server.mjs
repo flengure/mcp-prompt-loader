@@ -3,14 +3,24 @@ import fs from "fs";
 import path from "path";
 import process from "process";
 
-// Hard-coded mount point (no env var to drift)
+/**
+ * MCP Prompt Loader — Folder Mode (v2.0.0-dev)
+ * - Hard-coded mount point: /prompts (no env var to drift)
+ * - Supports MCP native prompts methods and tool calls:
+ *     - prompts/list
+ *     - prompts/get   (params: { name })
+ *     - tools/list    -> list_prompts, get_prompt_by_name
+ *     - tools/call    (list_prompts | get_prompt_by_name)
+ */
+
 const PROMPT_DIR = "/prompts";
 const MAX_BYTES = 512 * 1024; // 512 KB/file cap
-const NAME_RE = /^[a-zA-Z0-9._-]+$/; // safe names
+const NAME_RE = /^[a-zA-Z0-9._-]+$/; // safe names only
 
 const log = (lvl, msg) => console.error(`[${lvl}] ${msg}`);
 const send = (obj) => process.stdout.write(JSON.stringify(obj) + "\n");
 
+// Ensure mount exists
 if (!fs.existsSync(PROMPT_DIR)) {
   log(
     "ERROR",
@@ -24,7 +34,7 @@ function listPromptNames() {
     return fs
       .readdirSync(PROMPT_DIR, { withFileTypes: true })
       .filter((e) => e.isFile() && e.name.endsWith(".txt"))
-      .map((e) => e.name.replace(/\.txt$/i, "")) // names WITHOUT .txt
+      .map((e) => e.name.replace(/\.txt$/i, "")) // expose names WITHOUT .txt
       .filter((n) => NAME_RE.test(n))
       .sort((a, b) => a.localeCompare(b));
   } catch {
@@ -34,15 +44,16 @@ function listPromptNames() {
 
 function readPrompt(name) {
   if (!NAME_RE.test(name)) throw new Error("invalid name");
-  const p = path.join(PROMPT_DIR, `${name}.txt`);
-  const st = fs.statSync(p);
+  const fp = path.join(PROMPT_DIR, `${name}.txt`);
+  const st = fs.statSync(fp);
   if (!st.isFile()) throw new Error("not a file");
   if (st.size > MAX_BYTES) throw new Error(`file too large (${st.size} bytes)`);
-  let txt = fs.readFileSync(p, "utf8");
+  let txt = fs.readFileSync(fp, "utf8");
   if (txt.charCodeAt(0) === 0xfeff) txt = txt.slice(1); // strip BOM
   return txt.replace(/\r\n/g, "\n");
 }
 
+// ---------------- MCP loop ----------------
 process.stdin.setEncoding("utf8");
 let buf = "";
 
@@ -65,25 +76,29 @@ process.stdin.on("data", (chunk) => {
 
     const { id, method, params } = msg;
 
+    // initialize
     if (method === "initialize") {
       const clientProto = params?.protocolVersion || "2024-11-05";
-      return send({
+      send({
         jsonrpc: "2.0",
         id,
         result: {
           protocolVersion: clientProto,
           serverInfo: { name: "mcp-prompt-loader", version: "2.0.0-dev" },
+          // capabilities are optional; tools are discovered via tools/list
           capabilities: {
             prompts: { listChanged: false },
             tools: { listChanged: false },
           },
         },
       });
+      continue;
     }
 
+    // ----- native prompts API (for clients that use it) -----
     if (method === "prompts/list") {
       const names = listPromptNames();
-      return send({
+      send({
         jsonrpc: "2.0",
         id,
         result: {
@@ -94,6 +109,7 @@ process.stdin.on("data", (chunk) => {
           })),
         },
       });
+      continue;
     }
 
     if (method === "prompts/get") {
@@ -101,7 +117,7 @@ process.stdin.on("data", (chunk) => {
         const name = params?.name;
         if (!name) throw new Error("missing name");
         const text = readPrompt(name);
-        return send({
+        send({
           jsonrpc: "2.0",
           id,
           result: {
@@ -110,23 +126,34 @@ process.stdin.on("data", (chunk) => {
           },
         });
       } catch (e) {
-        return send({
+        send({
           jsonrpc: "2.0",
           id,
           error: { code: -32602, message: e.message },
         });
       }
+      continue;
     }
 
+    // ----- tools -----
     if (method === "tools/list") {
-      return send({
+      send({
         jsonrpc: "2.0",
         id,
         result: {
           tools: [
             {
+              name: "list_prompts",
+              description: "Return available prompt names (folder mode)",
+              inputSchema: {
+                type: "object",
+                properties: {},
+                additionalProperties: false,
+              },
+            },
+            {
               name: "get_prompt_by_name",
-              description: "Return prompt text by name",
+              description: "Return prompt text by name (argument: { name })",
               inputSchema: {
                 type: "object",
                 properties: { name: { type: "string" } },
@@ -137,26 +164,43 @@ process.stdin.on("data", (chunk) => {
           ],
         },
       });
+      continue;
     }
 
-    if (method === "tools/call" && params?.name === "get_prompt_by_name") {
-      try {
-        const name = params?.arguments?.name;
-        const text = readPrompt(name);
-        return send({
+    if (method === "tools/call") {
+      const tool = params?.name;
+
+      if (tool === "list_prompts") {
+        const names = listPromptNames();
+        send({
           jsonrpc: "2.0",
           id,
-          result: { content: [{ type: "text", text }] },
+          result: { content: [{ type: "text", text: JSON.stringify(names) }] },
         });
-      } catch (e) {
-        return send({
-          jsonrpc: "2.0",
-          id,
-          error: { code: -32602, message: e.message },
-        });
+        continue;
+      }
+
+      if (tool === "get_prompt_by_name") {
+        try {
+          const name = params?.arguments?.name;
+          const text = readPrompt(name);
+          send({
+            jsonrpc: "2.0",
+            id,
+            result: { content: [{ type: "text", text }] },
+          });
+        } catch (e) {
+          send({
+            jsonrpc: "2.0",
+            id,
+            error: { code: -32602, message: e.message },
+          });
+        }
+        continue;
       }
     }
 
+    // unknown
     if (id !== undefined) {
       send({
         jsonrpc: "2.0",
