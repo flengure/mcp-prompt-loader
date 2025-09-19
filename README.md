@@ -2,6 +2,12 @@
 n
 [![CI](https://github.com/flengure/mcp-prompt-loader/actions/workflows/release-docker.yml/badge.svg)](https://github.com/flengure/mcp-prompt-loader/actions/workflows/release-docker.yml)
  [![Docker Pulls](https://img.shields.io/docker/pulls/flengure/mcp-prompt-loader.svg)](https://hub.docker.com/r/flengure/mcp-prompt-loader)
+ [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+ [![Stars](https://img.shields.io/github/stars/flengure/mcp-prompt-loader?style=social)](https://github.com/flengure/mcp-prompt-loader/stargazers)n
+# MCP Prompt Loadern
+n
+[![CI](https://github.com/flengure/mcp-prompt-loader/actions/workflows/release-docker.yml/badge.svg)](https://github.com/flengure/mcp-prompt-loader/actions/workflows/release-docker.yml)
+ [![Docker Pulls](https://img.shields.io/docker/pulls/flengure/mcp-prompt-loader.svg)](https://hub.docker.com/r/flengure/mcp-prompt-loader)
  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)n
 # MCP Prompt Loader
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
