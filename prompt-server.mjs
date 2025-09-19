@@ -1,84 +1,150 @@
 #!/usr/bin/env node
-
 /**
- * MCP Prompt Loader Server
- *
- * Loads a system prompt from a mounted file and serves it via MCP (stdio).
+ * MCP Prompt Loader (spec-friendly)
+ * - Echoes client's protocolVersion in initialize
+ * - Returns non-empty capabilities { prompts:{}, tools:{} }
+ * - Implements prompts/list and prompts/get with content blocks
+ * - Optional PROMPT_FILE (defaults to /prompt.txt)
+ * - SIGHUP reload support
  */
 
 import fs from "fs";
+import readline from "readline";
 import process from "process";
 
-// Default prompt file inside container
-const promptFile = process.env.PROMPT_FILE || "/prompt.txt";
+const PROMPT_PATH = process.env.PROMPT_FILE || "/prompt.txt";
 
-function loadPrompt(file) {
+function loadPromptOrExit() {
   try {
-    const text = fs.readFileSync(file, "utf-8");
+    const txt = fs.readFileSync(PROMPT_PATH, "utf8");
     console.error(
-      `[INFO] Loaded prompt: ${file} (${text.length} bytes, ${text.split("\n").length} lines)`,
+      `[INFO] Loaded prompt: ${PROMPT_PATH} (${txt.length} bytes, ${txt.split("\n").length} lines)`,
     );
-    return text;
-  } catch (err) {
-    console.error(`[ERROR] Could not load prompt file: ${file}`, err);
+    return txt;
+  } catch (e) {
+    console.error(`[ERROR] Failed to load ${PROMPT_PATH}: ${e.message}`);
     process.exit(1);
   }
 }
 
-// Load prompt once at startup
-let prompt = loadPrompt(promptFile);
+let promptText = loadPromptOrExit();
 
-// Helper to send JSON-RPC messages over stdout
-function send(message) {
-  process.stdout.write(JSON.stringify(message) + "\n");
-}
+const rl = readline.createInterface({ input: process.stdin });
+const send = (obj) => process.stdout.write(JSON.stringify(obj) + "\n");
 
-process.stdin.setEncoding("utf-8");
-process.stdin.on("data", (chunk) => {
-  chunk
-    .trim()
-    .split("\n")
-    .forEach((line) => {
-      if (!line) return;
-      try {
-        const msg = JSON.parse(line);
+rl.on("line", (line) => {
+  if (!line.trim()) return;
+  let msg;
+  try {
+    msg = JSON.parse(line);
+  } catch {
+    console.error("[WARN] Ignoring non-JSON line");
+    return;
+  }
 
-        if (msg.method === "initialize") {
-          send({
-            jsonrpc: "2.0",
-            id: msg.id,
-            result: {
-              serverInfo: { name: "mcp-prompt-loader", version: "1.0.0" },
-              capabilities: {},
-            },
-          });
-        } else if (msg.method === "getPrompt") {
-          send({
-            jsonrpc: "2.0",
-            id: msg.id,
-            result: { prompt },
-          });
-        } else if (msg.method === "reload") {
-          prompt = loadPrompt(promptFile);
-          send({
-            jsonrpc: "2.0",
-            id: msg.id,
-            result: { reloaded: true },
-          });
-        } else {
-          send({
-            jsonrpc: "2.0",
-            id: msg.id,
-            error: { code: -32601, message: "Method not found" },
-          });
-        }
-      } catch (err) {
-        console.error("[ERROR] Failed to parse incoming JSON:", err);
-      }
+  const { id, method, params } = msg;
+
+  // --- initialize: echo client's protocolVersion & return non-empty capabilities
+  if (method === "initialize") {
+    const clientProto = params?.protocolVersion || "2024-11-05";
+    return send({
+      jsonrpc: "2.0",
+      id,
+      result: {
+        protocolVersion: clientProto,
+        serverInfo: { name: "mcp-prompt-loader", version: "1.0.3" },
+        capabilities: {
+          prompts: { listChanged: false },
+          tools: { listChanged: false },
+        },
+      },
     });
+  }
+
+  // --- prompts/list
+  if (method === "prompts/list") {
+    return send({
+      jsonrpc: "2.0",
+      id,
+      result: {
+        prompts: [
+          {
+            name: "default",
+            description: `Prompt loaded from ${PROMPT_PATH}`,
+            arguments: [],
+          },
+        ],
+      },
+    });
+  }
+
+  // --- prompts/get
+  if (method === "prompts/get") {
+    const name = params?.name ?? "default";
+    if (name !== "default") {
+      return send({
+        jsonrpc: "2.0",
+        id,
+        error: { code: -32602, message: `Unknown prompt: ${name}` },
+      });
+    }
+    return send({
+      jsonrpc: "2.0",
+      id,
+      result: {
+        description: `Prompt from ${PROMPT_PATH}`,
+        messages: [
+          {
+            role: "system",
+            content: [{ type: "text", text: promptText }],
+          },
+        ],
+      },
+    });
+  }
+
+  // --- (optional) tools/list (simple helper)
+  if (method === "tools/list") {
+    return send({
+      jsonrpc: "2.0",
+      id,
+      result: {
+        tools: [
+          {
+            name: "get_system_prompt",
+            description: "Return the loaded system prompt text",
+            inputSchema: {
+              type: "object",
+              properties: {},
+              additionalProperties: false,
+            },
+          },
+        ],
+      },
+    });
+  }
+
+  // --- (optional) tools/call
+  if (method === "tools/call" && params?.name === "get_system_prompt") {
+    return send({
+      jsonrpc: "2.0",
+      id,
+      result: { content: [{ type: "text", text: promptText }] },
+    });
+  }
+
+  // Unknown method: reply with JSON-RPC error if an id was provided
+  if (id !== undefined) {
+    send({
+      jsonrpc: "2.0",
+      id,
+      error: { code: -32601, message: `Method not found: ${method}` },
+    });
+  }
 });
 
-// Allow container reload with SIGHUP
+// SIGHUP reload support
 process.on("SIGHUP", () => {
-  prompt = loadPrompt(promptFile);
+  console.error("[INFO] SIGHUP received — reloading prompt...");
+  promptText = loadPromptOrExit();
 });
