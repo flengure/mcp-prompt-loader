@@ -18,7 +18,8 @@ A lightweight [Model Context Protocol (MCP)](https://modelcontextprotocol.io) se
 
 You can run `mcp-prompt-loader` in two ways:
 
-### Option 1 — Run directly from Docker Hub (no build needed)
+<details>
+<summary><b>Option 1 — Run directly from Docker Hub (no build needed)</b></summary>
 
 ```bash
 docker run --rm -i \
@@ -34,7 +35,10 @@ docker run --rm -i \
   flengure/mcp-prompt-loader:1.0.0
 ```
 
-### Option 2 — Build and run locally
+</details>
+
+<details>
+<summary><b>Option 2 — Build and run locally</b></summary>
 
 ```bash
 # Clone the repo
@@ -50,13 +54,16 @@ docker run --rm -i \
   mcp-prompt-loader:local
 ```
 
+</details>
+
 > The container always expects the prompt mounted as `/prompt.txt`.
 
 ---
 
 ## Example Client Configurations
 
-### Claude Desktop (`claude_desktop_config.json`)
+<details>
+<summary><b>Claude Desktop (`claude_desktop_config.json`)</b></summary>
 
 ```json
 {
@@ -77,7 +84,10 @@ docker run --rm -i \
 }
 ```
 
-### Zed (`settings.json`)
+</details>
+
+<details>
+<summary><b>Zed (`settings.json`)</b></summary>
 
 ```json
 {
@@ -98,7 +108,10 @@ docker run --rm -i \
 }
 ```
 
-### Gemini CLI (`config.json`)
+</details>
+
+<details>
+<summary><b>Gemini CLI (`config.json`)</b></summary>
 
 ```json
 {
@@ -119,7 +132,10 @@ docker run --rm -i \
 }
 ```
 
-### Cursor (`settings.json`)
+</details>
+
+<details>
+<summary><b>Cursor (`settings.json`)</b></summary>
 
 ```json
 {
@@ -140,7 +156,10 @@ docker run --rm -i \
 }
 ```
 
-### Windsurf (`settings.json`)
+</details>
+
+<details>
+<summary><b>Windsurf (`settings.json`)</b></summary>
 
 ```json
 {
@@ -160,6 +179,8 @@ docker run --rm -i \
   }
 }
 ```
+
+</details>
 
 ---
 
