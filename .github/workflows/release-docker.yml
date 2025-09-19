@@ -2,15 +2,12 @@ name: Build & Release Docker Image
 
 on:
   push:
-    branches: [main] # update :latest on every push to main
-    tags:
-      - "v*.*.*" # e.g. v2.0.1 → push :2.0.1 and :latest
+    branches: [main] # always update :latest from main
+    tags: ["v*.*.*"] # e.g. v2.0.1 -> push :2.0.1 (+ latest)
 
 jobs:
   docker:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     env:
       IMAGE_NAME: flengure/mcp-prompt-loader
 
@@ -30,7 +27,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Detect context (main push vs tag)
+      - name: Detect context (main vs tag)
         id: meta
         run: |
           if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
@@ -41,8 +38,8 @@ jobs:
             echo "mode=main" >> "$GITHUB_OUTPUT"
           fi
 
-      # Push :latest on any push to main
-      - name: Build & push :latest (push to main)
+      # --- Push :latest on any push to main (multi-arch) ---
+      - name: Build & push :latest (main)
         if: steps.meta.outputs.mode == 'main'
         uses: docker/build-push-action@v6
         with:
@@ -53,8 +50,8 @@ jobs:
           tags: |
             ${{ env.IMAGE_NAME }}:latest
 
-      # Push :<version> and :latest on tag
-      - name: Build & push :<version> (tag)
+      # --- Push :<version> and :latest on tag (multi-arch) ---
+      - name: Build & push :<version> and :latest (tag)
         if: steps.meta.outputs.mode == 'tag'
         uses: docker/build-push-action@v6
         with:
