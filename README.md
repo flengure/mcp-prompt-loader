@@ -1,31 +1,11 @@
-# MCP Prompt Loadern
-n
-[![CI](https://github.com/flengure/mcp-prompt-loader/actions/workflows/release-docker.yml/badge.svg)](https://github.com/flengure/mcp-prompt-loader/actions/workflows/release-docker.yml)
- [![Version](https://img.shields.io/github/v/tag/flengure/mcp-prompt-loader?label=release)](https://github.com/flengure/mcp-prompt-loader/releases)
- [![Docker Pulls](https://img.shields.io/docker/pulls/flengure/mcp-prompt-loader.svg)](https://hub.docker.com/r/flengure/mcp-prompt-loader)
- [![Image Size](https://img.shields.io/docker/image-size/flengure/mcp-prompt-loader/latest)](https://hub.docker.com/r/flengure/mcp-prompt-loader)
- [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
- [![Stars](https://img.shields.io/github/stars/flengure/mcp-prompt-loader?style=social)](https://github.com/flengure/mcp-prompt-loader/stargazers)n
-# MCP Prompt Loadern
-n
-[![CI](https://github.com/flengure/mcp-prompt-loader/actions/workflows/release-docker.yml/badge.svg)](https://github.com/flengure/mcp-prompt-loader/actions/workflows/release-docker.yml)
- [![Docker Pulls](https://img.shields.io/docker/pulls/flengure/mcp-prompt-loader.svg)](https://hub.docker.com/r/flengure/mcp-prompt-loader)
- [![Image Size](https://img.shields.io/docker/image-size/flengure/mcp-prompt-loader/latest)](https://hub.docker.com/r/flengure/mcp-prompt-loader)
- [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
- [![Stars](https://img.shields.io/github/stars/flengure/mcp-prompt-loader?style=social)](https://github.com/flengure/mcp-prompt-loader/stargazers)n
-# MCP Prompt Loadern
-n
-[![CI](https://github.com/flengure/mcp-prompt-loader/actions/workflows/release-docker.yml/badge.svg)](https://github.com/flengure/mcp-prompt-loader/actions/workflows/release-docker.yml)
- [![Docker Pulls](https://img.shields.io/docker/pulls/flengure/mcp-prompt-loader.svg)](https://hub.docker.com/r/flengure/mcp-prompt-loader)
- [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
- [![Stars](https://img.shields.io/github/stars/flengure/mcp-prompt-loader?style=social)](https://github.com/flengure/mcp-prompt-loader/stargazers)n
-# MCP Prompt Loadern
-n
-[![CI](https://github.com/flengure/mcp-prompt-loader/actions/workflows/release-docker.yml/badge.svg)](https://github.com/flengure/mcp-prompt-loader/actions/workflows/release-docker.yml)
- [![Docker Pulls](https://img.shields.io/docker/pulls/flengure/mcp-prompt-loader.svg)](https://hub.docker.com/r/flengure/mcp-prompt-loader)
- [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)n
 # MCP Prompt Loader
+
+[![CI](https://github.com/flengure/mcp-prompt-loader/actions/workflows/release-docker.yml/badge.svg)](https://github.com/flengure/mcp-prompt-loader/actions/workflows/release-docker.yml)
+[![Version](https://img.shields.io/github/v/tag/flengure/mcp-prompt-loader?label=release)](https://github.com/flengure/mcp-prompt-loader/releases)
+[![Docker Pulls](https://img.shields.io/docker/pulls/flengure/mcp-prompt-loader.svg)](https://hub.docker.com/r/flengure/mcp-prompt-loader)
+[![Image Size](https://img.shields.io/docker/image-size/flengure/mcp-prompt-loader/latest)](https://hub.docker.com/r/flengure/mcp-prompt-loader)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/flengure/mcp-prompt-loader?style=social)](https://github.com/flengure/mcp-prompt-loader/stargazers)
 
 A lightweight Model Context Protocol (MCP) server that loads prompts from `.txt` files and serves them to any MCP-compatible client (Claude Desktop, Zed, Gemini CLI, Cursor, Windsurf, etc.).
 
@@ -53,14 +33,14 @@ Your client config (Claude Desktop, Zed, etc.) will call this container and use 
 
 ## Docker Tags
 
-This project publishes Docker images to [Docker Hub](https://hub.docker.com/r/flengure/mcp-prompt-loader).
+This project publishes Docker images to https://hub.docker.com/r/flengure/mcp-prompt-loader
 
-- **`latest`**
-  Always points to the newest stable release (currently `v2.0.0`).
+- **latest**  
+  Always points to the newest stable release (currently `v2.0.0`).  
   Recommended if you just want the most up-to-date features.
 
-- **Versioned tags (e.g. `2.0.0`)**
-  Point to a specific release.
+- **Versioned tags (e.g. 2.0.0)**  
+  Point to a specific release.  
   Recommended if you need reproducible builds and don’t want unexpected updates.
 
 Example usage:
@@ -77,10 +57,10 @@ docker run --rm -i -v ~/Documents/prompts:/prompts:ro flengure/mcp-prompt-loader
 
 ## Tools
 
-### `list_prompts`
+### list_prompts
 Lists all `.txt` files in `/prompts` and exposes them by name.
 
-### `get_prompt`
+### get_prompt
 Fetches the contents of a specific prompt by name (without `.txt` extension).
 
 ---
@@ -171,17 +151,11 @@ They will be accessible immediately without restarting.
 <details>
 <summary>Cursor & Windsurf</summary>
 
-Same as above — use `"mcpServers"` with the same docker run arguments.
+Same as above — use "mcpServers" with the same docker run arguments.
 </details>
 
 ---
 
 ## License
 
-MIT
-
----
-
-## License
-
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the MIT License: see LICENSE.
