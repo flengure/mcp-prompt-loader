@@ -152,3 +152,9 @@ Same as above — use `"mcpServers"` with the same docker run arguments.
 ## License
 
 MIT
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
