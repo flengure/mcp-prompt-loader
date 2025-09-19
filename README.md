@@ -9,10 +9,10 @@ A lightweight Model Context Protocol (MCP) server that loads prompts from `.txt`
 
 ## Features
 
-- 🔹 **Folder Mode**: mount a folder with multiple `.txt` files and they are served as prompts  
-- 🔹 **Tooling**: list prompts and fetch content via JSON-RPC  
-- 🔹 **Clients Supported**: Claude Desktop, Zed, Gemini CLI, Cursor, Windsurf, docker-mcp-gateway  
-- 🔹 **No Restarts**: drop in new files and they show up automatically on `list_prompts`  
+- 🔹 **Folder Mode**: mount a folder with multiple `.txt` files and they are served as prompts
+- 🔹 **Tooling**: list prompts and fetch content via JSON-RPC
+- 🔹 **Clients Supported**: Claude Desktop, Zed, Gemini CLI, Cursor, Windsurf, docker-mcp-gateway
+- 🔹 **No Restarts**: drop in new files and they show up automatically on `list_prompts`
 
 ---
 
@@ -34,11 +34,11 @@ Your client config (Claude Desktop, Zed, etc.) will call this container and use 
 
 This project publishes Docker images to [Docker Hub](https://hub.docker.com/r/flengure/mcp-prompt-loader)
 
-- **latest**  
-  Always points to the newest stable release (currently v2.0.0).  
+- **latest**
+  Always points to the newest stable release (currently v2.0.0).
   Recommended if you just want the most up-to-date features.
 
-- **Versioned tags (e.g. 2.0.0)**  
+- **Versioned tags (e.g. 2.0.0)**
   Use if you want reproducible builds tied to a specific release.
 
 ---
@@ -77,3 +77,8 @@ You are an explainer. Break down complex topics into analogies and plain languag
 ## License
 
 MIT © 2025 [flengure](https://github.com/flengure/mcp-prompt-loader)
+---
+
+<sub>
+MCP prompt loader · Model Context Protocol · Docker container · multi-arch (amd64, arm64) · Claude · Zed · Cursor · Windsurf · Gemini CLI · AI prompts · JSON-RPC · developer tools · AI assistant integration · dynamic .txt prompts
+</sub>
