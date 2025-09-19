@@ -5,7 +5,7 @@
 [![GitHub Stars](https://img.shields.io/github/stars/flengure/mcp-prompt-loader?style=social)](https://github.com/flengure/mcp-prompt-loader)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-A lightweight Model Context Protocol (MCP) server that loads system prompts from plain text files.  
+A lightweight Model Context Protocol (MCP) server that loads system prompts from plain text files.
 Works with Claude Desktop, Zed, Gemini CLI, Cursor, Windsurf, and via docker-mcp-gateway.
 
 ---
@@ -59,7 +59,7 @@ Behavior:
 
 ---
 
-> 💡 **Tip:** First run `prompts/list` in your MCP client to see what’s available.  
+> 💡 **Tip:** First run `prompts/list` in your MCP client to see what’s available.
 > Then call `prompts/get` with the name (without `.txt`) to load it.
 
 ---
@@ -139,23 +139,23 @@ Behavior:
 
 ## Troubleshooting
 
-- **I don’t see my new prompt file.**  
-  `prompts/list` rescans the folder each time, and `prompts/get` re-reads on demand.  
+- **I don’t see my new prompt file.**
+  `prompts/list` rescans the folder each time, and `prompts/get` re-reads on demand.
   Make sure the file ends in `.txt` and is inside the mounted folder (default `/prompts`).
 
-- **Permission denied or file not found.**  
-  Check your `-v` mount path is correct and readable. Example:  
+- **Permission denied or file not found.**
+  Check your `-v` mount path is correct and readable. Example:
   `-v /Users/you/Documents/prompts:/prompts:ro`
 
-- **Windows path mapping (Docker Desktop).**  
-  Use a path like: `-v //c/Users/you/Documents/prompts:/prompts:ro`  
+- **Windows path mapping (Docker Desktop).**
+  Use a path like: `-v //c/Users/you/Documents/prompts:/prompts:ro`
   Ensure Docker Desktop has access to that drive.
 
-- **Client shows multiple tools but I can’t select a prompt.**  
+- **Client shows multiple tools but I can’t select a prompt.**
   Most clients list tools like commands. Run `prompts/list`, then choose a name and call `prompts/get`.
 
-- **Container exits immediately.**  
-  Your MCP client controls the process lifecycle. It may spawn the container only while connected.  
+- **Container exits immediately.**
+  Your MCP client controls the process lifecycle. It may spawn the container only while connected.
   That’s normal—no need to keep it running manually.
 
 ---
@@ -163,3 +163,10 @@ Behavior:
 ## License
 
 MIT © flengure
+---
+
+<!--
+Keywords: MCP, Model Context Protocol, Claude, Gemini, Zed, Cursor, AI, prompts,
+prompt loader, multi-arch, Docker, amd64, arm64, dynamic prompts, zero-restart, LLM,
+AI tools, developer tools, automation
+-->
