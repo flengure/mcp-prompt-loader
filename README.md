@@ -1,5 +1,10 @@
 # MCP Prompt Loader
 
+[![Docker Pulls](https://img.shields.io/docker/pulls/flengure/mcp-prompt-loader)](https://hub.docker.com/r/flengure/mcp-prompt-loader)
+[![Image Size](https://img.shields.io/docker/image-size/flengure/mcp-prompt-loader/latest)](https://hub.docker.com/r/flengure/mcp-prompt-loader)
+[![GitHub Stars](https://img.shields.io/github/stars/flengure/mcp-prompt-loader?style=social)](https://github.com/flengure/mcp-prompt-loader)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 A lightweight Model Context Protocol (MCP) server that loads system prompts from plain text files.  
 Works with Claude Desktop, Zed, Gemini CLI, Cursor, Windsurf, and via docker-mcp-gateway.
 
