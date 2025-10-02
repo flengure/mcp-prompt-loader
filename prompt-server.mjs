@@ -11,7 +11,7 @@ import yaml from "js-yaml";
  * - Dynamic content: re-read file on every get (prompts/get + get_prompt_by_name)
  */
 
-const PROMPT_DIR = "/prompts";
+const PROMPT_DIR = process.env.PROMPT_DIR || "/prompts";
 const MAX_BYTES = 512 * 1024;
 const NAME_RE = /^[a-zA-Z0-9._-]+$/;
 
