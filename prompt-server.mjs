@@ -2,6 +2,7 @@
 import fs from "fs";
 import path from "path";
 import process from "process";
+import yaml from "js-yaml";
 
 /**
  * MCP Prompt Loader — Folder Mode (v2.0.0-dev, dynamic)
@@ -17,13 +18,27 @@ const NAME_RE = /^[a-zA-Z0-9._-]+$/;
 const log = (lvl, msg) => console.error(`[${lvl}] ${msg}`);
 const send = (obj) => process.stdout.write(JSON.stringify(obj) + "\n");
 
+const PROMPT_EXTENSIONS = [".txt", ".md", ".json", ".yaml", ".yml"];
+
 function safeListNames() {
   try {
     // dynamic: read directory every call
     return fs
       .readdirSync(PROMPT_DIR, { withFileTypes: true })
-      .filter((e) => e.isFile() && e.name.toLowerCase().endsWith(".txt"))
-      .map((e) => e.name.replace(/\.txt$/i, "")) // expose names WITHOUT .txt
+      .filter((e) => {
+        if (!e.isFile()) return false;
+        const lowerName = e.name.toLowerCase();
+        return PROMPT_EXTENSIONS.some((ext) => lowerName.endsWith(ext));
+      })
+      .map((e) => {
+        const lowerName = e.name.toLowerCase();
+        for (const ext of PROMPT_EXTENSIONS) {
+          if (lowerName.endsWith(ext)) {
+            return e.name.slice(0, -ext.length);
+          }
+        }
+        return e.name; // Should not happen
+      })
       .filter((n) => NAME_RE.test(n))
       .sort((a, b) => a.localeCompare(b));
   } catch (e) {
@@ -32,16 +47,39 @@ function safeListNames() {
   }
 }
 
-function safeRead(name) {
+function findFile(name) {
   if (!NAME_RE.test(name)) throw new Error("invalid name");
-  const fp = path.join(PROMPT_DIR, `${name}.txt`);
-  const st = fs.statSync(fp); // throws if missing
-  if (!st.isFile()) throw new Error("not a file");
+  for (const ext of PROMPT_EXTENSIONS) {
+    const fp = path.join(PROMPT_DIR, `${name}${ext}`);
+    try {
+      const st = fs.statSync(fp);
+      if (st.isFile()) {
+        return { fp, st };
+      }
+    } catch (e) {
+      // ignore and continue
+    }
+  }
+  throw new Error("file not found");
+}
+
+function safeRead(name) {
+  const { fp, st } = findFile(name);
   if (st.size > MAX_BYTES) throw new Error(`file too large (${st.size} bytes)`);
   // dynamic: read file every call
   let txt = fs.readFileSync(fp, "utf8");
   if (txt.charCodeAt(0) === 0xfeff) txt = txt.slice(1); // strip BOM
-  return txt.replace(/\r\n/g, "\n");
+  txt = txt.replace(/\r\n/g, "\n");
+
+  const lowerExt = path.extname(fp).toLowerCase();
+
+  if (lowerExt === ".json") {
+    return JSON.parse(txt);
+  } else if (lowerExt === ".yaml" || lowerExt === ".yml") {
+    return yaml.load(txt);
+  } else {
+    return txt;
+  }
 }
 
 // ensure mount exists (at startup)
@@ -104,7 +142,7 @@ process.stdin.on("data", (chunk) => {
         result: {
           prompts: names.map((n) => ({
             name: n,
-            description: `Loaded from ${path.join(PROMPT_DIR, n + ".txt")}`,
+            description: `Loaded from ${path.join(PROMPT_DIR, findFile(n).fp)}`,
             arguments: [],
           })),
         },
@@ -116,14 +154,22 @@ process.stdin.on("data", (chunk) => {
       try {
         const name = params?.name;
         if (!name) throw new Error("missing name");
-        const text = safeRead(name); // dynamic
+        const content = safeRead(name); // dynamic
+
+        let result;
+        if (typeof content === 'string') {
+          result = {
+            description: `Prompt "${name}"`,
+            messages: [{ role: "system", content: [{ type: "text", text: content }] }],
+          };
+        } else {
+          result = content;
+        }
+
         send({
           jsonrpc: "2.0",
           id,
-          result: {
-            description: `Prompt "${name}"`,
-            messages: [{ role: "system", content: [{ type: "text", text }] }],
-          },
+          result,
         });
       } catch (e) {
         send({
@@ -183,11 +229,19 @@ process.stdin.on("data", (chunk) => {
       if (tool === "get_prompt_by_name") {
         try {
           const name = params?.arguments?.name;
-          const text = safeRead(name); // dynamic
+          const content = safeRead(name); // dynamic
+
+          let result;
+          if (typeof content === 'string') {
+            result = content;
+          } else {
+            result = JSON.stringify(content);
+          }
+
           send({
             jsonrpc: "2.0",
             id,
-            result: { content: [{ type: "text", text }] },
+            result: { content: [{ type: "text", text: result }] },
           });
         } catch (e) {
           send({

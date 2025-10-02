@@ -1,0 +1,23 @@
+{
+  "name": "mcp-prompt-loader",
+  "version": "1.0.0",
+  "description": "[![Docker Pulls](https://img.shields.io/docker/pulls/flengure/mcp-prompt-loader)](https://hub.docker.com/r/flengure/mcp-prompt-loader) [![Image Size](https://img.shields.io/docker/image-size/flengure/mcp-prompt-loader/latest)](https://hub.docker.com/r/flengure/mcp-prompt-loader/tags) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Stars](https://img.shields.io/github/stars/flengure/mcp-prompt-loader?style=social)](https://github.com/flengure/mcp-prompt-loader)",
+  "main": "index.js",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "github-flengure:flengure/mcp-prompt-loader.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  }
+}
