@@ -23,24 +23,22 @@ const PROMPT_EXTENSIONS = [".txt", ".md", ".json", ".yaml", ".yml"];
 function safeListNames() {
   try {
     // dynamic: read directory every call
-    return fs
-      .readdirSync(PROMPT_DIR, { withFileTypes: true })
+    const names = new Set();
+    fs.readdirSync(PROMPT_DIR, { withFileTypes: true })
       .filter((e) => {
         if (!e.isFile()) return false;
         const lowerName = e.name.toLowerCase();
         return PROMPT_EXTENSIONS.some((ext) => lowerName.endsWith(ext));
       })
-      .map((e) => {
+      .forEach((e) => {
         const lowerName = e.name.toLowerCase();
         for (const ext of PROMPT_EXTENSIONS) {
           if (lowerName.endsWith(ext)) {
-            return e.name.slice(0, -ext.length);
+            names.add(e.name.slice(0, -ext.length));
           }
         }
-        return e.name; // Should not happen
-      })
-      .filter((n) => NAME_RE.test(n))
-      .sort((a, b) => a.localeCompare(b));
+      });
+    return [...names].filter((n) => NAME_RE.test(n)).sort((a, b) => a.localeCompare(b));
   } catch (e) {
     log("WARN", `list failed: ${e.message}`);
     return [];
@@ -142,7 +140,7 @@ process.stdin.on("data", (chunk) => {
         result: {
           prompts: names.map((n) => ({
             name: n,
-            description: `Loaded from ${path.join(PROMPT_DIR, findFile(n).fp)}`,
+            description: `Loaded from ${findFile(n).fp}`,
             arguments: [],
           })),
         },
