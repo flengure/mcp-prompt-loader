@@ -1,0 +1,13 @@
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": [
+        {
+          "type": "text",
+          "text": "This is a JSON prompt"
+        }
+      ]
+    }
+  ]
+}

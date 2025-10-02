@@ -2,7 +2,6 @@
 import fs from "fs";
 import path from "path";
 import process from "process";
-import yaml from "js-yaml";
 
 /**
  * MCP Prompt Loader — Folder Mode (v2.0.0-dev, dynamic)
@@ -67,17 +66,7 @@ function safeRead(name) {
   // dynamic: read file every call
   let txt = fs.readFileSync(fp, "utf8");
   if (txt.charCodeAt(0) === 0xfeff) txt = txt.slice(1); // strip BOM
-  txt = txt.replace(/\r\n/g, "\n");
-
-  const lowerExt = path.extname(fp).toLowerCase();
-
-  if (lowerExt === ".json") {
-    return JSON.parse(txt);
-  } else if (lowerExt === ".yaml" || lowerExt === ".yml") {
-    return yaml.load(txt);
-  } else {
-    return txt;
-  }
+  return txt.replace(/\r\n/g, "\n");
 }
 
 // ensure mount exists (at startup)
@@ -152,22 +141,14 @@ process.stdin.on("data", (chunk) => {
       try {
         const name = params?.name;
         if (!name) throw new Error("missing name");
-        const content = safeRead(name); // dynamic
-
-        let result;
-        if (typeof content === 'string') {
-          result = {
-            description: `Prompt "${name}"`,
-            messages: [{ role: "system", content: [{ type: "text", text: content }] }],
-          };
-        } else {
-          result = content;
-        }
-
+        const text = safeRead(name); // dynamic
         send({
           jsonrpc: "2.0",
           id,
-          result,
+          result: {
+            description: `Prompt "${name}"`,
+            messages: [{ role: "system", content: [{ type: "text", text }] }],
+          },
         });
       } catch (e) {
         send({
@@ -227,19 +208,11 @@ process.stdin.on("data", (chunk) => {
       if (tool === "get_prompt_by_name") {
         try {
           const name = params?.arguments?.name;
-          const content = safeRead(name); // dynamic
-
-          let result;
-          if (typeof content === 'string') {
-            result = content;
-          } else {
-            result = JSON.stringify(content);
-          }
-
+          const text = safeRead(name); // dynamic
           send({
             jsonrpc: "2.0",
             id,
-            result: { content: [{ type: "text", text: result }] },
+            result: { content: [{ type: "text", text }] },
           });
         } catch (e) {
           send({

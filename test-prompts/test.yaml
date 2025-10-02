@@ -1,0 +1,5 @@
+messages:
+  - role: system
+    content:
+      - type: text
+        text: This is a YAML prompt

@@ -16,9 +16,5 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "dependencies": {
-    "js-yaml": "^4.1.0"
-  }
+  "license": "ISC"
 }
