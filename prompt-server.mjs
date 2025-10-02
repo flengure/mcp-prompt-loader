@@ -17,27 +17,15 @@ const NAME_RE = /^[a-zA-Z0-9._-]+$/;
 const log = (lvl, msg) => console.error(`[${lvl}] ${msg}`);
 const send = (obj) => process.stdout.write(JSON.stringify(obj) + "\n");
 
-const PROMPT_EXTENSIONS = [".txt", ".md", ".json", ".yaml", ".yml"];
-
 function safeListNames() {
   try {
     // dynamic: read directory every call
-    const names = new Set();
-    fs.readdirSync(PROMPT_DIR, { withFileTypes: true })
-      .filter((e) => {
-        if (!e.isFile()) return false;
-        const lowerName = e.name.toLowerCase();
-        return PROMPT_EXTENSIONS.some((ext) => lowerName.endsWith(ext));
-      })
-      .forEach((e) => {
-        const lowerName = e.name.toLowerCase();
-        for (const ext of PROMPT_EXTENSIONS) {
-          if (lowerName.endsWith(ext)) {
-            names.add(e.name.slice(0, -ext.length));
-          }
-        }
-      });
-    return [...names].filter((n) => NAME_RE.test(n)).sort((a, b) => a.localeCompare(b));
+    return fs
+      .readdirSync(PROMPT_DIR, { withFileTypes: true })
+      .filter((e) => e.isFile())
+      .map((e) => e.name)
+      .filter((n) => NAME_RE.test(n))
+      .sort((a, b) => a.localeCompare(b));
   } catch (e) {
     log("WARN", `list failed: ${e.message}`);
     return [];
@@ -46,18 +34,10 @@ function safeListNames() {
 
 function findFile(name) {
   if (!NAME_RE.test(name)) throw new Error("invalid name");
-  for (const ext of PROMPT_EXTENSIONS) {
-    const fp = path.join(PROMPT_DIR, `${name}${ext}`);
-    try {
-      const st = fs.statSync(fp);
-      if (st.isFile()) {
-        return { fp, st };
-      }
-    } catch (e) {
-      // ignore and continue
-    }
-  }
-  throw new Error("file not found");
+  const fp = path.join(PROMPT_DIR, name);
+  const st = fs.statSync(fp); // throws if missing
+  if (!st.isFile()) throw new Error("not a file");
+  return { fp, st };
 }
 
 function safeRead(name) {
